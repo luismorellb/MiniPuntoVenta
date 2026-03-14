@@ -1,0 +1,5 @@
+mx\itson\mvp\model\Producto.class
+mx\itson\mvp\controller\POSController.class
+mx\itson\mvp\model\Venta.class
+mx\itson\mvp\Main.class
+mx\itson\mvp\view\POSView.class
