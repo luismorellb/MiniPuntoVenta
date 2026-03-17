@@ -19,28 +19,36 @@ public class POSController {
     private Venta venta;
 
     public POSController(POSView view, Venta venta) {
-
         this.view = view;
         this.venta = venta;
 
-        view.btnAgregar.addActionListener(e -> agregarProducto());
-        view.btnEliminar.addActionListener(e -> eliminarProducto());
-        view.btnFinalizar.addActionListener(e -> finalizarVenta());
+        view.onAgregar(e -> agregarProducto());
+        view.onEliminar(e -> eliminarProducto());
+        view.onFinalizar(e -> finalizarVenta());
     }
 
     private void agregarProducto() {
 
-        String nombre = view.txtNombre.getText().trim();
-        String precioTexto = view.txtPrecio.getText().trim();
-        String cantidadTexto = view.txtCantidad.getText().trim();
+        String nombre = view.getNombre();
+        String precioTexto = view.getPrecio();
+        String cantidadTexto = view.getCantidad();
 
-        // Validar nombre
         if (nombre.isEmpty()) {
             JOptionPane.showMessageDialog(
-                    view,
-                    "El nombre del producto es obligatorio.",
-                    "Error de entrada",
-                    JOptionPane.ERROR_MESSAGE
+                view,
+                "El nombre del producto es obligatorio.",
+                "Error de entrada",
+                JOptionPane.ERROR_MESSAGE
+            );
+            return;
+        }
+
+        if (precioTexto.isEmpty()) {
+            JOptionPane.showMessageDialog(
+                view,
+                "El precio es obligatorio.",
+                "Error de entrada",
+                JOptionPane.ERROR_MESSAGE
             );
             return;
         }
@@ -51,30 +59,40 @@ public class POSController {
             precio = Double.parseDouble(precioTexto);
         } catch (NumberFormatException e) {
             JOptionPane.showMessageDialog(
-                    view,
-                    "El precio debe ser un número válido.",
-                    "Error de entrada",
-                    JOptionPane.ERROR_MESSAGE
+                view,
+                "El precio debe ser un número válido.",
+                "Error de entrada",
+                JOptionPane.ERROR_MESSAGE
             );
             return;
         }
 
         if (precio <= 0) {
             JOptionPane.showMessageDialog(
-                    view,
-                    "El precio debe ser mayor que 0.",
-                    "Error de entrada",
-                    JOptionPane.ERROR_MESSAGE
+                view,
+                "El precio debe ser mayor que 0.",
+                "Error de entrada",
+                JOptionPane.ERROR_MESSAGE
             );
             return;
         }
 
         if (precio > 10000) {
             JOptionPane.showMessageDialog(
-                    view,
-                    "El precio no puede ser mayor a 10,000.",
-                    "Error de entrada",
-                    JOptionPane.ERROR_MESSAGE
+                view,
+                "El precio no puede ser mayor a 10,000.",
+                "Error de entrada",
+                JOptionPane.ERROR_MESSAGE
+            );
+            return;
+        }
+
+        if (cantidadTexto.isEmpty()) {
+            JOptionPane.showMessageDialog(
+                view,
+                "La cantidad es obligatoria.",
+                "Error de entrada",
+                JOptionPane.ERROR_MESSAGE
             );
             return;
         }
@@ -85,40 +103,40 @@ public class POSController {
             cantidad = Integer.parseInt(cantidadTexto);
         } catch (NumberFormatException e) {
             JOptionPane.showMessageDialog(
-                    view,
-                    "La cantidad debe ser un número entero.",
-                    "Error de entrada",
-                    JOptionPane.ERROR_MESSAGE
+                view,
+                "La cantidad debe ser un número entero.",
+                "Error de entrada",
+                JOptionPane.ERROR_MESSAGE
             );
             return;
         }
 
         if (cantidad <= 0) {
             JOptionPane.showMessageDialog(
-                    view,
-                    "La cantidad debe ser mayor que 0.",
-                    "Error de entrada",
-                    JOptionPane.ERROR_MESSAGE
+                view,
+                "La cantidad debe ser mayor que 0.",
+                "Error de entrada",
+                JOptionPane.ERROR_MESSAGE
             );
             return;
         }
 
         if (cantidad > 100) {
             JOptionPane.showMessageDialog(
-                    view,
-                    "La cantidad máxima permitida es 100.",
-                    "Error de entrada",
-                    JOptionPane.ERROR_MESSAGE
+                view,
+                "La cantidad máxima permitida es 100.",
+                "Error de entrada",
+                JOptionPane.ERROR_MESSAGE
             );
             return;
         }
 
         if (venta.cantidadProductos() >= 20) {
             JOptionPane.showMessageDialog(
-                    view,
-                    "No se pueden agregar más de 20 productos en una venta.",
-                    "Error del sistema",
-                    JOptionPane.ERROR_MESSAGE
+                view,
+                "No se pueden agregar más de 20 productos en una venta.",
+                "Error del sistema",
+                JOptionPane.ERROR_MESSAGE
             );
             return;
         }
@@ -126,56 +144,53 @@ public class POSController {
         Producto p = new Producto(nombre, precio, cantidad);
         venta.agregarProducto(p);
 
-        view.modeloTabla.addRow(new Object[]{
-                p.getNombre(),
-                p.getPrecio(),
-                p.getCantidad(),
-                p.getSubtotal()
+        view.agregarFila(new Object[]{
+            p.getNombre(),
+            p.getPrecio(),
+            p.getCantidad(),
+            p.getSubtotal()
         });
 
         actualizarTotal();
-        limpiarCampos();
+        view.limpiarCampos();
     }
 
-    private void eliminarProducto(){
+    private void eliminarProducto() {
 
-        int fila = view.tabla.getSelectedRow();
+        int fila = view.getFilaSeleccionada();
 
-        if(fila >= 0){
-
-            venta.eliminarProducto(fila);
-            view.modeloTabla.removeRow(fila);
-
-            actualizarTotal();
+        if (fila < 0) {
+            JOptionPane.showMessageDialog(
+                view,
+                "Selecciona un producto para eliminar.",
+                "Aviso",
+                JOptionPane.WARNING_MESSAGE
+            );
+            return;
         }
+
+        venta.eliminarProducto(fila);
+        view.eliminarFila(fila);
+        actualizarTotal();
     }
 
-    private void finalizarVenta(){
+    private void finalizarVenta() {
 
         double total = venta.calcularTotal();
 
         JOptionPane.showMessageDialog(
-        view,
-        "Venta finalizada correctamente.\nTotal a pagar: $" + total,
-        "Venta completada",
-        JOptionPane.INFORMATION_MESSAGE
+            view,
+            "Venta finalizada correctamente.\nTotal a pagar: $" + String.format("%.2f", total),
+            "Venta completada",
+            JOptionPane.INFORMATION_MESSAGE
         );
 
         venta.limpiarVenta();
-        view.modeloTabla.setRowCount(0);
-
+        view.limpiarTabla();
         actualizarTotal();
     }
 
-    private void actualizarTotal(){
-
-        view.lblTotal.setText("Total: " + venta.calcularTotal());
+    private void actualizarTotal() {
+        view.setTotal(venta.calcularTotal());
     }
-
-    private void limpiarCampos(){
-
-        view.txtNombre.setText("");
-        view.txtPrecio.setText("");
-        view.txtCantidad.setText("");
-    } 
 }
